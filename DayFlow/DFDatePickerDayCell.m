@@ -11,6 +11,7 @@
 @implementation DFDatePickerDayCell
 @synthesize imageView = _imageView;
 @synthesize overlayView = _overlayView;
+@synthesize indicatorView = _indicatorView;
 
 - (id) initWithFrame:(CGRect)frame {
 	self = [super initWithFrame:frame];
@@ -76,7 +77,7 @@
 		
 #else
 		
-		CGContextSetFillColorWithColor(context, [UIColor colorWithRed:53.0f/256.0f green:145.0f/256.0f blue:195.0f/256.0f alpha:1.0f].CGColor);
+		CGContextSetFillColorWithColor(context, [UIColor colorWithRed:256.0f/256.0f green:256.0f/256.0f blue:256.0f/256.0f alpha:1.0f].CGColor);
 		
 #endif
 
@@ -85,7 +86,7 @@
 		UIFont *font = [UIFont boldSystemFontOfSize:20.0f];
 		CGRect textBounds = (CGRect){ 0.0f, 10.0f, 44.0f, 24.0f };
 		
-		CGContextSetFillColorWithColor(context, [UIColor whiteColor].CGColor);
+		CGContextSetFillColorWithColor(context, [UIColor blackColor].CGColor);
 		[[NSString stringWithFormat:@"%i", self.date.day] drawInRect:textBounds withFont:font lineBreakMode:NSLineBreakByCharWrapping alignment:NSTextAlignmentCenter];
 		
 		UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
@@ -96,7 +97,21 @@
 	}];
 	
 	self.overlayView.hidden = !(self.selected || self.highlighted);
+	self.indicatorView.hidden = !self.enabled;
+	self.indicatorView.center = (CGPoint) { self.contentView.center.x, CGRectGetHeight(self.contentView.bounds) - 5 };
+	[self.contentView bringSubviewToFront: self.indicatorView];
+}
 
+- (UIView *) indicatorView {
+	if(!_indicatorView) {
+		UIView *view = [[UIView alloc] initWithFrame: (CGRect) {1,1,4,4}];
+		view.backgroundColor = [UIColor clearColor];
+		view.clipsToBounds = YES;
+		view.layer.cornerRadius = 2.0f;
+		_indicatorView = view;
+		[self.contentView addSubview: _indicatorView];
+	}
+	return _indicatorView;
 }
 
 - (UIView *) overlayView {

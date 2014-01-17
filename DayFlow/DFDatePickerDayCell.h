@@ -5,6 +5,10 @@
 
 @property (nonatomic, readwrite, assign) DFDatePickerDate date;
 @property (nonatomic, getter=isEnabled) BOOL enabled;
-@property (nonatomic, readonly, weak) UIView *indicatorView;
+@property (nonatomic, readwrite, assign) BOOL showOpenDay;
+@property (nonatomic, readwrite, assign) BOOL showTour;
+@property (nonatomic, readwrite, assign) BOOL showInterview;
+
+- (void) hideAllIndicator;
 
 @end

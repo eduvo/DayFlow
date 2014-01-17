@@ -6,12 +6,13 @@
 + (id) fetchObjectForKey:(id)key withCreator:(id(^)(void))block;
 @property (nonatomic, readonly, strong) UIImageView *imageView;
 @property (nonatomic, readonly, strong) UIView *overlayView;
+@property (nonatomic, readonly, strong) NSArray *indicatorViews;
 @end
 
 @implementation DFDatePickerDayCell
 @synthesize imageView = _imageView;
 @synthesize overlayView = _overlayView;
-@synthesize indicatorView = _indicatorView;
+@synthesize indicatorViews = _indicatorViews;
 
 - (id) initWithFrame:(CGRect)frame {
 	self = [super initWithFrame:frame];
@@ -97,21 +98,57 @@
 	}];
 	
 	self.overlayView.hidden = !(self.selected || self.highlighted);
-	self.indicatorView.hidden = !self.enabled;
-	self.indicatorView.center = (CGPoint) { self.contentView.center.x, CGRectGetHeight(self.contentView.bounds) - 5 };
-	[self.contentView bringSubviewToFront: self.indicatorView];
+	if(!self.enabled) {
+		[self hideAllIndicator];
+	}
+	CGFloat xOffset = -6;
+	for(UIView *view in self.indicatorViews) {
+		view.center = (CGPoint) { self.contentView.center.x + xOffset, CGRectGetHeight(self.contentView.bounds) - 5 };
+		xOffset += 6;
+		[self.contentView bringSubviewToFront: view];
+	}
 }
 
-- (UIView *) indicatorView {
-	if(!_indicatorView) {
-		UIView *view = [[UIView alloc] initWithFrame: (CGRect) {1,1,4,4}];
-		view.backgroundColor = [UIColor clearColor];
-		view.clipsToBounds = YES;
-		view.layer.cornerRadius = 2.0f;
-		_indicatorView = view;
-		[self.contentView addSubview: _indicatorView];
+- (void) hideAllIndicator {
+	for(UIView *view in self.indicatorViews) {
+		view.hidden = YES;
 	}
-	return _indicatorView;
+}
+
+- (void) setShowTour:(BOOL)showTour {
+	UIView *view = self.indicatorViews[0];
+	view.hidden = !showTour;
+}
+
+- (void) setShowOpenDay:(BOOL)showOpenDay {
+	UIView *view = self.indicatorViews[1];
+	view.hidden = !showOpenDay;
+}
+
+- (void) setShowInterview:(BOOL)showInterview {
+	UIView *view = self.indicatorViews[2];
+	view.hidden = !showInterview;
+}
+
+- (NSArray *) indicatorViews {
+	if(!_indicatorViews) {
+		NSArray *colors = @[
+												[UIColor colorWithRed: 96/255.0f green: 134/255.0f blue: 253/255.0f alpha: 1],
+												[UIColor colorWithRed: 180/255.0f green: 216/255.0f blue: 53/255.0f alpha: 1],
+												[UIColor colorWithRed: 227/255.0f green: 116/255.0f blue: 92/255.0f alpha: 1]
+												];
+		NSMutableArray *array = [NSMutableArray array];
+		for(int i = 0; i < 3; i++) {
+			UIView *view = [[UIView alloc] initWithFrame: (CGRect) {1,1,4,4}];
+			view.backgroundColor = colors[i];
+			view.clipsToBounds = YES;
+			view.layer.cornerRadius = 2.0f;
+			[array addObject: view];
+			[self.contentView addSubview: view];
+		}
+		_indicatorViews = [NSArray arrayWithArray: array];
+	}
+	return _indicatorViews;
 }
 
 - (UIView *) overlayView {

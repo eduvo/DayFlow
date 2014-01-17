@@ -359,7 +359,7 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 	
 	BOOL animated = YES;
 	UICollectionView *cv = self.collectionView;
-	if(diff < 0 || diff > cv.numberOfSections) {
+	if(diff < 0 || diff >= cv.numberOfSections) {
 		_fromDate = [self pickerDateFromDate:[self.calendar dateByAddingComponents: ((^{
 			NSDateComponents *dateComponents = [NSDateComponents new];
 			dateComponents.month = -6;

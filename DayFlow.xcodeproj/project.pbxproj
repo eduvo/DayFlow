@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9665D60E18A2121B008F651D /* OACollectionViewFlowLayout.m in Sources */ = {isa = PBXBuildFile; fileRef = 9665D60D18A2121B008F651D /* OACollectionViewFlowLayout.m */; };
 		FF2A69CE172D2C07005A1A21 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FF2A69CD172D2C07005A1A21 /* Foundation.framework */; };
 		FF2A69D3172D2C07005A1A21 /* DayFlow.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = FF2A69D2172D2C07005A1A21 /* DayFlow.h */; };
 		FF2A69DD172D2C64005A1A21 /* DFDatePickerView.m in Sources */ = {isa = PBXBuildFile; fileRef = FF2A69DC172D2C64005A1A21 /* DFDatePickerView.m */; };
@@ -32,6 +33,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		9665D60C18A2121B008F651D /* OACollectionViewFlowLayout.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OACollectionViewFlowLayout.h; path = DayFlow/OACollectionViewFlowLayout.h; sourceTree = "<group>"; };
+		9665D60D18A2121B008F651D /* OACollectionViewFlowLayout.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = OACollectionViewFlowLayout.m; path = DayFlow/OACollectionViewFlowLayout.m; sourceTree = "<group>"; };
 		FF2A69CA172D2C07005A1A21 /* libDayFlow.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libDayFlow.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		FF2A69CD172D2C07005A1A21 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		FF2A69D1172D2C07005A1A21 /* DayFlow-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "DayFlow-Prefix.pch"; sourceTree = "<group>"; };
@@ -67,6 +70,8 @@
 		FF2A69C1172D2C06005A1A21 = {
 			isa = PBXGroup;
 			children = (
+				9665D60C18A2121B008F651D /* OACollectionViewFlowLayout.h */,
+				9665D60D18A2121B008F651D /* OACollectionViewFlowLayout.m */,
 				FF2A69D2172D2C07005A1A21 /* DayFlow.h */,
 				FFB686A6172E8A660027ADF2 /* DFDatePickerViewController.h */,
 				FFB686A5172E8A660027ADF2 /* DFDatePickerViewController.m */,
@@ -165,6 +170,7 @@
 				FF2A69DD172D2C64005A1A21 /* DFDatePickerView.m in Sources */,
 				FFB686AD172E8A660027ADF2 /* NSCalendar+DFAdditions.m in Sources */,
 				FFB686AE172E8A660027ADF2 /* DFDatePickerViewController.m in Sources */,
+				9665D60E18A2121B008F651D /* OACollectionViewFlowLayout.m in Sources */,
 				FFB686AF172E8A660027ADF2 /* DFDatePickerMonthHeader.m in Sources */,
 				FFB686B0172E8A660027ADF2 /* DFDatePickerDayCell.m in Sources */,
 				FFB686B1172E8A660027ADF2 /* DFDatePickerCollectionView.m in Sources */,

@@ -2,22 +2,22 @@
 
 @interface DFDatePickerDayCell ()
 + (NSCache *) imageCache;
-+ (id) cacheKeyForPickerDate:(DFDatePickerDate)date;
++ (id) cacheKeyForPickerDate:(DFDatePickerDate)date selectedState:(BOOL) selected;
 + (id) fetchObjectForKey:(id)key withCreator:(id(^)(void))block;
 @property (nonatomic, readonly, strong) UIImageView *imageView;
-@property (nonatomic, readonly, strong) UIView *overlayView;
-@property (nonatomic, readonly, strong) NSArray *indicatorViews;
 @end
 
 @implementation DFDatePickerDayCell
 @synthesize imageView = _imageView;
-@synthesize overlayView = _overlayView;
-@synthesize indicatorViews = _indicatorViews;
 
 - (id) initWithFrame:(CGRect)frame {
 	self = [super initWithFrame:frame];
 	if (self) {
 		self.backgroundColor = [UIColor whiteColor];
+		self.layer.cornerRadius = 6.0f;
+		self.clipsToBounds = YES;
+		self.layer.borderWidth = 1.0f;
+		self.layer.borderColor = [UIColor colorWithRed:217/255.0f green:218/255.0f blue: 220/255.0f alpha: 1].CGColor;
 	}
 	return self;
 }
@@ -34,6 +34,7 @@
 
 - (void) setHighlighted:(BOOL)highlighted {
 	[super setHighlighted:highlighted];
+	self.contentView.backgroundColor = [UIColor whiteColor];
 	[self setNeedsLayout];
 }
 - (void) setSelected:(BOOL)selected {
@@ -62,33 +63,37 @@
 	
 	self.imageView.alpha = self.enabled ? 1.0f : 0.25f;
 	
-	self.imageView.image = [[self class] fetchObjectForKey:[[self class] cacheKeyForPickerDate:self.date] withCreator:^{
+	if(self.selected || self.highlighted) {
+		self.layer.borderColor = [UIColor colorWithRed:71/255.0f green:140/255.0f blue:254/255.0f alpha:1].CGColor;
+	} else {
+		self.layer.borderColor = [UIColor colorWithRed:217/255.0f green:218/255.0f blue: 220/255.0f alpha: 1].CGColor;
+	}
+	
+	self.imageView.image = [[self class] fetchObjectForKey:[[self class] cacheKeyForPickerDate:self.date selectedState: (self.selected || self.highlighted)] withCreator:^{
 		
 		UIGraphicsBeginImageContextWithOptions(self.bounds.size, YES, self.window.screen.scale);
 		CGContextRef context = UIGraphicsGetCurrentContext();
 		
-#if 0
-		
-		//	Generate a random color
-		//	https://gist.github.com/kylefox/1689973
-		CGFloat hue = ( arc4random() % 256 / 256.0 );  //  0.0 to 1.0
-		CGFloat saturation = ( arc4random() % 128 / 256.0 ) + 0.5;  //  0.5 to 1.0, away from white
-		CGFloat brightness = ( arc4random() % 128 / 256.0 ) + 0.5;  //  0.5 to 1.0, away from black
-		CGContextSetFillColorWithColor(context, [UIColor colorWithHue:hue saturation:saturation brightness:brightness alpha:1.0f].CGColor);
-		
-#else
-		
 		CGContextSetFillColorWithColor(context, [UIColor colorWithRed:256.0f/256.0f green:256.0f/256.0f blue:256.0f/256.0f alpha:1.0f].CGColor);
-		
-#endif
 
 		CGContextFillRect(context, self.bounds);
 		
-		UIFont *font = [UIFont boldSystemFontOfSize:20.0f];
-		CGRect textBounds = (CGRect){ 0.0f, 10.0f, 44.0f, 24.0f };
-		
-		CGContextSetFillColorWithColor(context, [UIColor blackColor].CGColor);
-		[[NSString stringWithFormat:@"%i", self.date.day] drawInRect:textBounds withFont:font lineBreakMode:NSLineBreakByCharWrapping alignment:NSTextAlignmentCenter];
+		NSString *dayString = [NSString stringWithFormat:@"%i", self.date.day];
+		UIFont *font = [UIFont fontWithName: @"HelveticaNeue-Thin" size: 40];
+		if(self.selected || self.highlighted) {
+			font = [UIFont italicSystemFontOfSize: 40];
+		}
+		NSDictionary *fontAttributes = @{
+																		 NSFontAttributeName:font,
+																		 NSForegroundColorAttributeName:[UIColor colorWithRed:80/255.0f green: 101/255.0f blue:134/255.0f alpha:1]
+																		 };
+		CGSize size = [dayString sizeWithAttributes: fontAttributes];
+		CGRect textBounds = (CGRect){
+			(CGRectGetWidth(self.bounds)-size.width)/2,
+			(CGRectGetHeight(self.bounds)-size.height)/2,
+			size
+		};
+		[dayString drawInRect: textBounds withAttributes: fontAttributes];
 		
 		UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
 		UIGraphicsEndImageContext();
@@ -96,70 +101,6 @@
 		return image;
 		
 	}];
-	
-	self.overlayView.hidden = !(self.selected || self.highlighted);
-	if(!self.enabled) {
-		[self hideAllIndicator];
-	}
-	CGFloat xOffset = -6;
-	for(UIView *view in self.indicatorViews) {
-		view.center = (CGPoint) { self.contentView.center.x + xOffset, CGRectGetHeight(self.contentView.bounds) - 5 };
-		xOffset += 6;
-		[self.contentView bringSubviewToFront: view];
-	}
-}
-
-- (void) hideAllIndicator {
-	for(UIView *view in self.indicatorViews) {
-		view.hidden = YES;
-	}
-}
-
-- (void) setShowTour:(BOOL)showTour {
-	UIView *view = self.indicatorViews[0];
-	view.hidden = !showTour;
-}
-
-- (void) setShowOpenDay:(BOOL)showOpenDay {
-	UIView *view = self.indicatorViews[1];
-	view.hidden = !showOpenDay;
-}
-
-- (void) setShowInterview:(BOOL)showInterview {
-	UIView *view = self.indicatorViews[2];
-	view.hidden = !showInterview;
-}
-
-- (NSArray *) indicatorViews {
-	if(!_indicatorViews) {
-		NSArray *colors = @[
-												[UIColor colorWithRed: 96/255.0f green: 134/255.0f blue: 253/255.0f alpha: 1],
-												[UIColor colorWithRed: 180/255.0f green: 216/255.0f blue: 53/255.0f alpha: 1],
-												[UIColor colorWithRed: 227/255.0f green: 116/255.0f blue: 92/255.0f alpha: 1]
-												];
-		NSMutableArray *array = [NSMutableArray array];
-		for(int i = 0; i < 3; i++) {
-			UIView *view = [[UIView alloc] initWithFrame: (CGRect) {1,1,4,4}];
-			view.backgroundColor = colors[i];
-			view.clipsToBounds = YES;
-			view.layer.cornerRadius = 2.0f;
-			[array addObject: view];
-			[self.contentView addSubview: view];
-		}
-		_indicatorViews = [NSArray arrayWithArray: array];
-	}
-	return _indicatorViews;
-}
-
-- (UIView *) overlayView {
-	if (!_overlayView) {
-		_overlayView = [[UIView alloc] initWithFrame:self.contentView.bounds];
-		_overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
-		_overlayView.backgroundColor = [UIColor blackColor];
-		_overlayView.alpha = 0.25f;
-		[self.contentView addSubview:_overlayView];
-	}
-	return _overlayView;
 }
 
 - (UIImageView *) imageView {
@@ -180,8 +121,8 @@
 	return cache;
 }
 
-+ (id) cacheKeyForPickerDate:(DFDatePickerDate)date {
-	return @(date.day);
++ (id) cacheKeyForPickerDate:(DFDatePickerDate)date selectedState:(BOOL) selected {
+	return [NSString stringWithFormat: @"%@%@",[@(date.day) stringValue],(selected?@"s":@"")];
 }
 
 + (id) fetchObjectForKey:(id)key withCreator:(id(^)(void))block {

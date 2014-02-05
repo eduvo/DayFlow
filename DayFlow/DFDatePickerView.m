@@ -10,7 +10,7 @@
 static NSString * const DFDatePickerViewCellIdentifier = @"dateCell";
 static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 
-@interface DFDatePickerView () <DFDatePickerCollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegate>
+@interface DFDatePickerView () <DFDatePickerCollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegate, UIScrollViewDelegate>
 @property (nonatomic, readonly, strong) NSCalendar *calendar;
 @property (nonatomic, readonly, assign) DFDatePickerDate fromDate;
 @property (nonatomic, readonly, assign) DFDatePickerDate toDate;
@@ -323,7 +323,13 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 	
 	cell.date = cellPickerDate;
 	cell.enabled = ((firstDayPickerDate.year == cellPickerDate.year) && (firstDayPickerDate.month == cellPickerDate.month));
-	cell.selected = [self.selectedDate isEqualToDate:cellDate];
+	DFDatePickerDate date1 = [self pickerDateFromDate: self.selectedDate];
+	DFDatePickerDate date2 = [self pickerDateFromDate: cellDate];
+	cell.selected = NO;
+	if(date1.day == date2.day && date1.year == date2.year && date1.month == date2.month) {
+		[self.collectionView selectItemAtIndexPath: indexPath animated: NO scrollPosition: UICollectionViewScrollPositionNone];
+		cell.selected = YES;
+	}
 	
 	if([self.delegate respondsToSelector: @selector(datePickerView:willDisplayCell:withDate:atIndexPath:)]) {
 		[self.delegate datePickerView: self willDisplayCell: cell withDate: [self dateFromPickerDate: cell.date] atIndexPath: indexPath];
@@ -369,7 +375,7 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 }
 
 - (void) displayDate: (NSDate *) date {
-	
+	self.selectedDate = date;
 	NSInteger diff = [self.calendar components:NSMonthCalendarUnit fromDate:[self dateFromPickerDate:self.fromDate] toDate:date options:0].month;
 	
 	BOOL animated = YES;
@@ -396,8 +402,17 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 		animated = NO;
 	}
 	
-	NSIndexPath *cellIndexPath = [NSIndexPath indexPathForItem:([cv numberOfItemsInSection:diff] / 2) inSection:diff];
-	[self.collectionView scrollToItemAtIndexPath:cellIndexPath atScrollPosition:UICollectionViewScrollPositionCenteredVertically animated: animated];
+	diff = [self.calendar components:NSMonthCalendarUnit fromDate:[self dateFromPickerDate:self.fromDate] toDate:date options:0].month;
+	NSDate *firstDayInMonth = [self dateForFirstDayInSection: diff];
+	DFDatePickerDate firstDayPickerDate = [self pickerDateFromDate:firstDayInMonth];
+	NSUInteger weekday = [self.calendar components:NSWeekdayCalendarUnit fromDate:firstDayInMonth].weekday;
+	DFDatePickerDate targetDate = [self pickerDateFromDate: date];
+	NSInteger itemIndex = ((targetDate.day-1) + (weekday - 1));
+	if(itemIndex < 7) {
+		itemIndex = 7;
+	}
+	NSIndexPath *cellIndexPath = [NSIndexPath indexPathForItem: itemIndex inSection:diff];
+	[self.collectionView scrollToItemAtIndexPath:cellIndexPath atScrollPosition:UICollectionViewScrollPositionBottom animated: animated];
 }
 
 - (void) setSelectedDate:(NSDate *)selectedDate {
@@ -459,6 +474,27 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 
 - (void) reloadData {
 	[self.collectionView reloadData];
+}
+
+#pragma mark - scrollview delegate
+
+- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate
+{
+//	CGPoint scrollVelocity = [[scrollView panGestureRecognizer] velocityInView:self];
+//	NSLog(@"%@", NSStringFromCGPoint(scrollVelocity));
+	if([self.delegate respondsToSelector: @selector(datePickerViewDidEndDragging:willDecelerate:)]) {
+		[self.delegate datePickerViewDidEndDragging: self willDecelerate: decelerate];
+	}
+}
+
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView
+{
+	CGPoint scrollVelocity = [[scrollView panGestureRecognizer] velocityInView:self];
+	NSLog(@"%@", NSStringFromCGPoint(scrollVelocity));
+	[self.collectionView visibleCells];
+	if([self.delegate respondsToSelector: @selector(datePickerViewDidEndDecelerating:)]) {
+		[self.delegate datePickerViewDidEndDecelerating: self];
+	}
 }
 
 @end

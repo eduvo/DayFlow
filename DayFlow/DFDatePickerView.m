@@ -5,6 +5,7 @@
 #import "DFDatePickerMonthHeader.h"
 #import "DFDatePickerView.h"
 #import "NSCalendar+DFAdditions.h"
+#import "OACollectionViewFlowLayout.h"
 
 static NSString * const DFDatePickerViewCellIdentifier = @"dateCell";
 static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
@@ -113,11 +114,17 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 	//	If you need to decorate, key decorative views in.
 	
 	if (!_collectionViewLayout) {
-		_collectionViewLayout = [UICollectionViewFlowLayout new];
-		_collectionViewLayout.headerReferenceSize = (CGSize){ 320, 64 };
-		_collectionViewLayout.itemSize = (CGSize){ 44, 44 };
+		_collectionViewLayout = [OACollectionViewFlowLayout new];
+//		_collectionViewLayout.headerReferenceSize = (CGSize){ 320, 64 };
+//		_collectionViewLayout.itemSize = (CGSize){ 44, 44 };
+//		_collectionViewLayout.minimumLineSpacing = 2.0f;
+//		_collectionViewLayout.minimumInteritemSpacing = 2.0f;
+		_collectionViewLayout.headerReferenceSize = (CGSize){ 680, 64 };
+		_collectionViewLayout.itemSize = (CGSize){ 90, 90 };
+		_collectionViewLayout.sectionInset = (UIEdgeInsets){2,10,2,10};
 		_collectionViewLayout.minimumLineSpacing = 2.0f;
 		_collectionViewLayout.minimumInteritemSpacing = 2.0f;
+
 	}
 	
 	return _collectionViewLayout;
@@ -353,6 +360,14 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 	}
 }
 
+- (void) collectionView:(UICollectionView *)collectionView didDeselectItemAtIndexPath:(NSIndexPath *)indexPath {
+	DFDatePickerDayCell *cell = ((DFDatePickerDayCell *)[collectionView cellForItemAtIndexPath:indexPath]);
+	if([self.delegate respondsToSelector: @selector(datePickerView:didDeselectDate:)]) {
+		NSDate *cellDate = [self.calendar dateFromComponents:[self dateComponentsFromPickerDate:cell.date]];
+		[self.delegate datePickerView: self didDeselectDate: cellDate];
+	}
+}
+
 - (void) displayDate: (NSDate *) date {
 	
 	NSInteger diff = [self.calendar components:NSMonthCalendarUnit fromDate:[self dateFromPickerDate:self.fromDate] toDate:date options:0].month;
@@ -396,6 +411,7 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 		
 		DFDatePickerMonthHeader *monthHeader = [collectionView dequeueReusableSupplementaryViewOfKind:kind withReuseIdentifier:DFDatePickerViewMonthHeaderIdentifier forIndexPath:indexPath];
 		
+		monthHeader.backgroundColor = [UIColor whiteColor];
 		NSDateFormatter *dateFormatter = [self.calendar df_dateFormatterNamed:@"calendarMonthHeader" withConstructor:^{
 			NSDateFormatter *dateFormatter = [NSDateFormatter new];
 			dateFormatter.calendar = self.calendar;
@@ -405,6 +421,12 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 		
 		NSDate *formattedDate = [self dateForFirstDayInSection:indexPath.section];
 		monthHeader.textLabel.text = [dateFormatter stringFromDate:formattedDate];
+		
+		NSArray *weekSymobls = [dateFormatter shortWeekdaySymbols];
+		NSUInteger i = 0;
+		for(UILabel *label in monthHeader.weekViews) {
+			label.text = [weekSymobls[i++] uppercaseString];
+		}
 		
 		return monthHeader;
 		

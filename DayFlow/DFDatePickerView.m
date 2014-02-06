@@ -67,7 +67,11 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 	
 	[super layoutSubviews];
 	
-	self.collectionView.frame = self.bounds;
+	if(CGRectGetWidth(self.collectionBounds)) {
+		self.collectionView.frame = self.collectionBounds;
+	} else {
+		self.collectionView.frame = self.bounds;
+	}
 	if (!self.collectionView.superview) {
 		[self addSubview:self.collectionView];
 	}
@@ -404,7 +408,6 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 	
 	diff = [self.calendar components:NSMonthCalendarUnit fromDate:[self dateFromPickerDate:self.fromDate] toDate:date options:0].month;
 	NSDate *firstDayInMonth = [self dateForFirstDayInSection: diff];
-	DFDatePickerDate firstDayPickerDate = [self pickerDateFromDate:firstDayInMonth];
 	NSUInteger weekday = [self.calendar components:NSWeekdayCalendarUnit fromDate:firstDayInMonth].weekday;
 	DFDatePickerDate targetDate = [self pickerDateFromDate: date];
 	NSInteger itemIndex = ((targetDate.day-1) + (weekday - 1));
@@ -412,7 +415,14 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 		itemIndex = 7;
 	}
 	NSIndexPath *cellIndexPath = [NSIndexPath indexPathForItem: itemIndex inSection:diff];
-	[self.collectionView scrollToItemAtIndexPath:cellIndexPath atScrollPosition:UICollectionViewScrollPositionBottom animated: animated];
+	[self.collectionView performBatchUpdates: ^{
+		[self.collectionView scrollToItemAtIndexPath:cellIndexPath atScrollPosition:UICollectionViewScrollPositionBottom animated: animated];
+	} completion:^(BOOL finished) {
+		if([self.delegate respondsToSelector: @selector(didDisplayDate:)]) {
+			[self.delegate didDisplayDate: date];
+		}
+	}];
+	
 }
 
 - (void) setSelectedDate:(NSDate *)selectedDate {
@@ -476,6 +486,24 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 	[self.collectionView reloadData];
 }
 
+- (NSArray *) visibleDates {
+	NSMutableArray *array = [NSMutableArray array];
+	for(DFDatePickerDayCell *cell in [self.collectionView visibleCells]) {
+		if(cell.enabled) {
+			CGFloat y = CGRectGetMaxY([self.collectionView convertRect: cell.frame toView: self]);
+			BOOL belowHeader = (y > 63);
+			if(belowHeader) {
+				[array addObject: [self dateFromPickerDate: cell.date]];
+			}
+		}
+	}
+	return array;
+}
+
+- (void) setSelectable:(BOOL)selectable {
+	self.collectionView.allowsSelection = selectable;
+}
+
 #pragma mark - scrollview delegate
 
 - (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate
@@ -489,9 +517,9 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView
 {
-	CGPoint scrollVelocity = [[scrollView panGestureRecognizer] velocityInView:self];
-	NSLog(@"%@", NSStringFromCGPoint(scrollVelocity));
-	[self.collectionView visibleCells];
+//	CGPoint scrollVelocity = [[scrollView panGestureRecognizer] velocityInView:self];
+//	NSLog(@"%@", NSStringFromCGPoint(scrollVelocity));
+//	[self.collectionView visibleCells];
 	if([self.delegate respondsToSelector: @selector(datePickerViewDidEndDecelerating:)]) {
 		[self.delegate datePickerViewDidEndDecelerating: self];
 	}

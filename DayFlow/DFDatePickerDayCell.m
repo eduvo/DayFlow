@@ -69,7 +69,7 @@
 		self.layer.borderColor = [UIColor colorWithRed:217/255.0f green:218/255.0f blue: 220/255.0f alpha: 1].CGColor;
 	}
 	
-	self.imageView.image = [[self class] fetchObjectForKey:[[self class] cacheKeyForPickerDate:self.date selectedState: (self.selected || self.highlighted)] withCreator:^{
+	self.imageView.image = [[self class] fetchObjectForKey:[[self class] cacheKeyForPickerDate:self.date selectedState: NO] withCreator:^{
 		
 		UIGraphicsBeginImageContextWithOptions(self.bounds.size, YES, self.window.screen.scale);
 		CGContextRef context = UIGraphicsGetCurrentContext();
@@ -80,9 +80,6 @@
 		
 		NSString *dayString = [NSString stringWithFormat:@"%i", self.date.day];
 		UIFont *font = [UIFont fontWithName: @"HelveticaNeue-Thin" size: 40];
-		if(self.selected || self.highlighted) {
-			font = [UIFont italicSystemFontOfSize: 40];
-		}
 		NSDictionary *fontAttributes = @{
 																		 NSFontAttributeName:font,
 																		 NSForegroundColorAttributeName:[UIColor colorWithRed:80/255.0f green: 101/255.0f blue:134/255.0f alpha:1]

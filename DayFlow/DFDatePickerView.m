@@ -327,20 +327,26 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 	
 	cell.date = cellPickerDate;
 	cell.enabled = ((firstDayPickerDate.year == cellPickerDate.year) && (firstDayPickerDate.month == cellPickerDate.month));
-	DFDatePickerDate date1 = [self pickerDateFromDate: self.selectedDate];
-	DFDatePickerDate date2 = [self pickerDateFromDate: cellDate];
-	cell.selected = NO;
-	if(date1.day == date2.day && date1.year == date2.year && date1.month == date2.month) {
-		[self.collectionView selectItemAtIndexPath: indexPath animated: NO scrollPosition: UICollectionViewScrollPositionNone];
-		cell.selected = YES;
-	}
 	
+	[self highlightSelectedDateOnCell: cell forDate: cellDate onIndexPath: indexPath];
 	if([self.delegate respondsToSelector: @selector(datePickerView:willDisplayCell:withDate:atIndexPath:)]) {
 		[self.delegate datePickerView: self willDisplayCell: cell withDate: [self dateFromPickerDate: cell.date] atIndexPath: indexPath];
 	}
 	
 	return cell;
 	
+}
+
+- (void) highlightSelectedDateOnCell:(DFDatePickerDayCell *)cell forDate:(NSDate *)cellDate onIndexPath:(NSIndexPath *)indexPath {
+	if(self.selectedDate) {
+		DFDatePickerDate date1 = [self pickerDateFromDate: self.selectedDate];
+		DFDatePickerDate date2 = [self pickerDateFromDate: cellDate];
+		cell.selected = NO;
+		if(date1.day == date2.day && date1.year == date2.year && date1.month == date2.month) {
+			[self.collectionView selectItemAtIndexPath: indexPath animated: NO scrollPosition: UICollectionViewScrollPositionNone];
+			cell.selected = YES;
+		}
+	}
 }
 
 //	We are cheating by piggybacking on view state to avoid recalculation

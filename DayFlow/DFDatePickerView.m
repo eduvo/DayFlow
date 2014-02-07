@@ -521,36 +521,31 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 	UICollectionViewFlowLayout *cvLayout = self.collectionViewLayout;
 
 //	NSLog(@"speed: %@",NSStringFromCGPoint(velocity));
-//	NSLog(@"starting offset: %@",NSStringFromCGPoint(cv.contentOffset));
+	NSLog(@"starting offset: %@",NSStringFromCGPoint(cv.contentOffset));
 	CGPoint p = cv.contentOffset;
 	p.y += floorf(velocity.y*491);
-//	NSLog(@"predicted offset: %@",NSStringFromCGPoint(p));
+	NSLog(@"predicted offset: %@",NSStringFromCGPoint(p));
+	// problem is this does not calculate the height for each section correctly
+	// its not always 5 row
 	CGFloat sectionFullHeight = (cvLayout.itemSize.height+cvLayout.minimumLineSpacing)*5+cvLayout.headerReferenceSize.height;
 	CGFloat itemHeight = (cvLayout.itemSize.height+cvLayout.minimumLineSpacing);
 	CGFloat targetSection = floorf(p.y/sectionFullHeight);
-//	NSLog(@"%f", targetSection);
-//	if(p.y < 0) {
-//		NSLog(@"reload previous");
-//	} else if(targetSection >= self.monthRange*2) {
-//		NSLog(@"reload next");
-//	}
-	CGFloat expectedSectionYOffset = sectionFullHeight*targetSection+targetSection*cvLayout.sectionInset.top;
+	NSLog(@"%f", targetSection);
+
+	CGFloat expectedSectionYOffset = (sectionFullHeight+cvLayout.sectionInset.top) * targetSection;
 	CGFloat diff = p.y - expectedSectionYOffset;
 	CGFloat subSection = floorf(diff/itemHeight);
 	CGFloat subSectionCount = floorf([cv numberOfItemsInSection: targetSection]/7.0f);
-//	NSLog(@"%f %F", subSection, subSectionCount);
-	if(subSection == 0) {
-		subSection = 1;
-	}
+
 	if(subSection > (subSectionCount-2)) { // skip to next month
-		subSection = 1;
+		subSection = 0;
 		targetSection += 1;
-		expectedSectionYOffset = sectionFullHeight*targetSection+targetSection*cvLayout.sectionInset.top;
+		expectedSectionYOffset = (sectionFullHeight+cvLayout.sectionInset.top) * targetSection;
 	} else if(subSection < 0) {
 		subSection = 0;
-		targetSection -= 1;
-		expectedSectionYOffset = sectionFullHeight*targetSection+targetSection*cvLayout.sectionInset.top;
+		expectedSectionYOffset = (sectionFullHeight+cvLayout.sectionInset.top) * targetSection;
 	}
+	NSLog(@"%f %f %f", subSection, subSectionCount, targetSection);
 	(*targetContentOffset).y = expectedSectionYOffset + itemHeight*subSection;
 }
 

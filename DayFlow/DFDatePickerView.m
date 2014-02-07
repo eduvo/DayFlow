@@ -16,6 +16,7 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 @property (nonatomic, readonly, assign) DFDatePickerDate toDate;
 @property (nonatomic, readonly, strong) UICollectionView *collectionView;
 @property (nonatomic, readonly, strong) UICollectionViewFlowLayout *collectionViewLayout;
+@property (nonatomic, readonly, assign) NSInteger monthRange;
 @end
 
 @implementation DFDatePickerView
@@ -31,18 +32,19 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 	if (self) {
 		
 		_calendar = calendar;
+		_monthRange = 6;
 		
 		NSDate *now = [_calendar dateFromComponents:[_calendar components:NSYearCalendarUnit|NSMonthCalendarUnit fromDate:[NSDate date]]];
 		
 		_fromDate = [self pickerDateFromDate:[_calendar dateByAddingComponents:((^{
 			NSDateComponents *components = [NSDateComponents new];
-			components.month = -6;
+			components.month = -self.monthRange;
 			return components;
 		})()) toDate:now options:0]];
 		
 		_toDate = [self pickerDateFromDate:[_calendar dateByAddingComponents:((^{
 			NSDateComponents *components = [NSDateComponents new];
-			components.month = 6;
+			components.month = self.monthRange;
 			return components;
 		})()) toDate:now options:0]];
 		
@@ -57,6 +59,7 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 	self = [self initWithCalendar:[NSCalendar currentCalendar]];
 	if (self) {
 		self.frame = frame;
+		_monthRange = 6;
 	}
 	
 	return self;
@@ -83,10 +86,8 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 	[super willMoveToSuperview:newSuperview];
 	
 	if (newSuperview && !_collectionView) {
-		//	do some initialization!
 		UICollectionView *cv = self.collectionView;
-		NSIndexPath *cellIndexPath = [NSIndexPath indexPathForItem:([cv numberOfItemsInSection:(cv.numberOfSections / 2)] / 2) inSection:(cv.numberOfSections / 2)];
-		[self.collectionView scrollToItemAtIndexPath:cellIndexPath atScrollPosition:UICollectionViewScrollPositionCenteredVertically animated:NO];
+		[self displayDate: [NSDate date] animated: NO];
 	}
 
 }
@@ -166,7 +167,7 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 
 	[self shiftDatesByComponents:((^{
 		NSDateComponents *dateComponents = [NSDateComponents new];
-		dateComponents.month = -6;
+		dateComponents.month = -self.monthRange;
 		return dateComponents;
 	})())];
 
@@ -176,7 +177,7 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 	
 	[self shiftDatesByComponents:((^{
 		NSDateComponents *dateComponents = [NSDateComponents new];
-		dateComponents.month = 6;
+		dateComponents.month = self.monthRange;
 		return dateComponents;
 	})())];
 	
@@ -259,6 +260,7 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 		cv.contentOffset.x,
 		cv.contentOffset.y + (toSectionOrigin.y - fromSectionOrigin.y)
 	}];
+//	NSLog(@"offset changed: %@", NSStringFromCGPoint(cv.contentOffset));
 	
 }
 
@@ -384,22 +386,21 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 	}
 }
 
-- (void) displayDate: (NSDate *) date {
+- (void) displayDate: (NSDate *) date animated:(BOOL)animated{
 	self.selectedDate = date;
 	NSInteger diff = [self.calendar components:NSMonthCalendarUnit fromDate:[self dateFromPickerDate:self.fromDate] toDate:date options:0].month;
 	
-	BOOL animated = YES;
 	UICollectionView *cv = self.collectionView;
 	if(diff < 0 || diff >= cv.numberOfSections) {
 		_fromDate = [self pickerDateFromDate:[self.calendar dateByAddingComponents: ((^{
 			NSDateComponents *dateComponents = [NSDateComponents new];
-			dateComponents.month = -6;
+			dateComponents.month = -self.monthRange;
 			return dateComponents;
 		})()) toDate: date options:0]];
 		_fromDate.day = 1;
 		_toDate = [self pickerDateFromDate:[self.calendar dateByAddingComponents: ((^{
 			NSDateComponents *dateComponents = [NSDateComponents new];
-			dateComponents.month = 6;
+			dateComponents.month = self.monthRange;
 			return dateComponents;
 		})()) toDate: date options:0]];
 		_toDate.day = 1;
@@ -421,13 +422,13 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 		itemIndex = 7;
 	}
 	NSIndexPath *cellIndexPath = [NSIndexPath indexPathForItem: itemIndex inSection:diff];
-	[self.collectionView performBatchUpdates: ^{
+//	[self.collectionView performBatchUpdates: ^{
 		[self.collectionView scrollToItemAtIndexPath:cellIndexPath atScrollPosition:UICollectionViewScrollPositionBottom animated: animated];
-	} completion:^(BOOL finished) {
-		if([self.delegate respondsToSelector: @selector(didDisplayDate:)]) {
-			[self.delegate didDisplayDate: date];
-		}
-	}];
+//	} completion:^(BOOL finished) {
+//		if([self.delegate respondsToSelector: @selector(didDisplayDate:)]) {
+//			[self.delegate didDisplayDate: date];
+//		}
+//	}];
 	
 }
 
@@ -512,10 +513,56 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 
 #pragma mark - scrollview delegate
 
+- (void) scrollViewWillEndDragging:(UIScrollView *)scrollView withVelocity:(CGPoint)velocity targetContentOffset:(inout CGPoint *)targetContentOffset {
+	
+	if(velocity.x == velocity.y && velocity.y == 0)
+		return;
+	UICollectionView *cv = self.collectionView;
+	UICollectionViewFlowLayout *cvLayout = self.collectionViewLayout;
+
+//	NSLog(@"speed: %@",NSStringFromCGPoint(velocity));
+//	NSLog(@"starting offset: %@",NSStringFromCGPoint(cv.contentOffset));
+	CGPoint p = cv.contentOffset;
+	p.y += floorf(velocity.y*491);
+//	NSLog(@"predicted offset: %@",NSStringFromCGPoint(p));
+	CGFloat sectionFullHeight = (cvLayout.itemSize.height+cvLayout.minimumLineSpacing)*5+cvLayout.headerReferenceSize.height;
+	CGFloat itemHeight = (cvLayout.itemSize.height+cvLayout.minimumLineSpacing);
+	CGFloat targetSection = floorf(p.y/sectionFullHeight);
+//	NSLog(@"%f", targetSection);
+//	if(p.y < 0) {
+//		NSLog(@"reload previous");
+//	} else if(targetSection >= self.monthRange*2) {
+//		NSLog(@"reload next");
+//	}
+	CGFloat expectedSectionYOffset = sectionFullHeight*targetSection+targetSection*cvLayout.sectionInset.top;
+	CGFloat diff = p.y - expectedSectionYOffset;
+	CGFloat subSection = floorf(diff/itemHeight);
+	CGFloat subSectionCount = floorf([cv numberOfItemsInSection: targetSection]/7.0f);
+//	NSLog(@"%f %F", subSection, subSectionCount);
+	if(subSection == 0) {
+		subSection = 1;
+	}
+	if(subSection > (subSectionCount-2)) { // skip to next month
+		subSection = 1;
+		targetSection += 1;
+		expectedSectionYOffset = sectionFullHeight*targetSection+targetSection*cvLayout.sectionInset.top;
+	} else if(subSection < 0) {
+		subSection = 0;
+		targetSection -= 1;
+		expectedSectionYOffset = sectionFullHeight*targetSection+targetSection*cvLayout.sectionInset.top;
+	}
+	(*targetContentOffset).y = expectedSectionYOffset + itemHeight*subSection;
+}
+
 - (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate
 {
-//	CGPoint scrollVelocity = [[scrollView panGestureRecognizer] velocityInView:self];
-//	NSLog(@"%@", NSStringFromCGPoint(scrollVelocity));
+//	self.shouldTrackDeceleration = decelerate;
+//	if(!decelerate) {
+//		NSLog(@"end offset: %@",NSStringFromCGPoint(self.collectionView.contentOffset));
+//		UICollectionViewCell *cell = [self.collectionView visibleCells].lastObject;
+//		NSIndexPath *fromIndexPath = [self.collectionView indexPathForCell: cell];
+//		NSLog(@"lastcell %@",NSStringFromCGPoint([self.collectionViewLayout layoutAttributesForItemAtIndexPath:fromIndexPath].frame.origin));
+//	}
 	if([self.delegate respondsToSelector: @selector(datePickerViewDidEndDragging:willDecelerate:)]) {
 		[self.delegate datePickerViewDidEndDragging: self willDecelerate: decelerate];
 	}
@@ -523,9 +570,6 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView
 {
-//	CGPoint scrollVelocity = [[scrollView panGestureRecognizer] velocityInView:self];
-//	NSLog(@"%@", NSStringFromCGPoint(scrollVelocity));
-//	[self.collectionView visibleCells];
 	if([self.delegate respondsToSelector: @selector(datePickerViewDidEndDecelerating:)]) {
 		[self.delegate datePickerViewDidEndDecelerating: self];
 	}

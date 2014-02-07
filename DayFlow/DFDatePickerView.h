@@ -21,7 +21,7 @@
 @property (nonatomic, readwrite, assign) CGRect collectionBounds;
 @property (nonatomic, readwrite, assign) BOOL selectable;
 
-- (void) displayDate: (NSDate *) date;
+- (void) displayDate: (NSDate *) date animated:(BOOL)animated;
 - (NSArray *) visibleDates;
 - (void) reloadData;
 

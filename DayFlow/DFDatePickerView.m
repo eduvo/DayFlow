@@ -489,7 +489,7 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 	for(DFDatePickerDayCell *cell in [self.collectionView visibleCells]) {
 		if(cell.enabled) {
 			CGFloat y = CGRectGetMaxY([self.collectionView convertRect: cell.frame toView: self]);
-			BOOL belowHeader = (y > 63);
+			BOOL belowHeader = (y > 64);
 			if(belowHeader) {
 				[array addObject: [self dateFromPickerDate: cell.date]];
 			}
@@ -562,8 +562,8 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 }
 
 - (void) scrollViewDidEndScrollingAnimation:(UIScrollView *)scrollView {
-	if(self.selectedDate && [self.delegate respondsToSelector: @selector(datePickerView:didSelectDate:)]) {
-		[self.delegate datePickerView: self didSelectDate: self.selectedDate];
+	if(self.selectedDate && [self.delegate respondsToSelector: @selector(didDisplayDate:)]) {
+		[self.delegate didDisplayDate: self.selectedDate];
 	}
 }
 

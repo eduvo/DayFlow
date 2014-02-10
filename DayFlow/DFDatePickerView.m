@@ -260,8 +260,6 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 		cv.contentOffset.x,
 		cv.contentOffset.y + (toSectionOrigin.y - fromSectionOrigin.y)
 	}];
-//	NSLog(@"offset changed: %@", NSStringFromCGPoint(cv.contentOffset));
-	
 }
 
 - (NSInteger) numberOfSectionsInCollectionView:(UICollectionView *)collectionView {
@@ -422,14 +420,7 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 		itemIndex = 7;
 	}
 	NSIndexPath *cellIndexPath = [NSIndexPath indexPathForItem: itemIndex inSection:diff];
-//	[self.collectionView performBatchUpdates: ^{
-		[self.collectionView scrollToItemAtIndexPath:cellIndexPath atScrollPosition:UICollectionViewScrollPositionBottom animated: animated];
-//	} completion:^(BOOL finished) {
-//		if([self.delegate respondsToSelector: @selector(didDisplayDate:)]) {
-//			[self.delegate didDisplayDate: date];
-//		}
-//	}];
-	
+	[self.collectionView scrollToItemAtIndexPath:cellIndexPath atScrollPosition:UICollectionViewScrollPositionBottom animated: animated];
 }
 
 - (void) setSelectedDate:(NSDate *)selectedDate {
@@ -520,44 +511,44 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 	UICollectionView *cv = self.collectionView;
 	UICollectionViewFlowLayout *cvLayout = self.collectionViewLayout;
 
-//	NSLog(@"speed: %@",NSStringFromCGPoint(velocity));
-	NSLog(@"starting offset: %@",NSStringFromCGPoint(cv.contentOffset));
 	CGPoint p = cv.contentOffset;
-	p.y += floorf(velocity.y*491);
-	NSLog(@"predicted offset: %@",NSStringFromCGPoint(p));
-	// problem is this does not calculate the height for each section correctly
-	// its not always 5 row
-	CGFloat sectionFullHeight = (cvLayout.itemSize.height+cvLayout.minimumLineSpacing)*5+cvLayout.headerReferenceSize.height;
+	p.y += floorf(velocity.y*491); // magic number
+	
+	// find out expected stopping section offset
+	CGFloat targetSection = 0;
+	CGFloat sectionRows = floorf([cv numberOfItemsInSection: targetSection]/7.0f);
+	CGFloat sectionFullHeight = (cvLayout.itemSize.height+cvLayout.minimumLineSpacing)*sectionRows+cvLayout.headerReferenceSize.height+cvLayout.sectionInset.top;
+	CGFloat previousSectionYOffset = 0;
+	while(p.y > sectionFullHeight) {
+		targetSection++;
+		if(targetSection >= cv.numberOfSections) {
+			targetSection = cv.numberOfSections - 1;
+			break;
+		}
+		sectionRows = floorf([cv numberOfItemsInSection: targetSection]/7.0f);
+		previousSectionYOffset = sectionFullHeight;
+		sectionFullHeight += (cvLayout.itemSize.height+cvLayout.minimumLineSpacing)*sectionRows+cvLayout.headerReferenceSize.height+cvLayout.sectionInset.top;
+	}
+	
+	// find expected stopping row in section
 	CGFloat itemHeight = (cvLayout.itemSize.height+cvLayout.minimumLineSpacing);
-	CGFloat targetSection = floorf(p.y/sectionFullHeight);
-	NSLog(@"%f", targetSection);
-
-	CGFloat expectedSectionYOffset = (sectionFullHeight+cvLayout.sectionInset.top) * targetSection;
+	CGFloat expectedSectionYOffset = previousSectionYOffset;
 	CGFloat diff = p.y - expectedSectionYOffset;
 	CGFloat subSection = floorf(diff/itemHeight);
-	CGFloat subSectionCount = floorf([cv numberOfItemsInSection: targetSection]/7.0f);
+	sectionRows = floorf([cv numberOfItemsInSection: targetSection]/7.0f);
 
-	if(subSection > (subSectionCount-2)) { // skip to next month
+	// skip to next month if offset will stop beyong last two rows of the section
+	if(subSection > (sectionRows-2)) {
 		subSection = 0;
 		targetSection += 1;
-		expectedSectionYOffset = (sectionFullHeight+cvLayout.sectionInset.top) * targetSection;
-	} else if(subSection < 0) {
-		subSection = 0;
-		expectedSectionYOffset = (sectionFullHeight+cvLayout.sectionInset.top) * targetSection;
+		sectionRows = floorf([cv numberOfItemsInSection: targetSection]/7.0f);
+		expectedSectionYOffset = expectedSectionYOffset + (cvLayout.itemSize.height+cvLayout.minimumLineSpacing)*sectionRows+cvLayout.headerReferenceSize.height+cvLayout.sectionInset.top;
 	}
-	NSLog(@"%f %f %f", subSection, subSectionCount, targetSection);
 	(*targetContentOffset).y = expectedSectionYOffset + itemHeight*subSection;
 }
 
 - (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate
 {
-//	self.shouldTrackDeceleration = decelerate;
-//	if(!decelerate) {
-//		NSLog(@"end offset: %@",NSStringFromCGPoint(self.collectionView.contentOffset));
-//		UICollectionViewCell *cell = [self.collectionView visibleCells].lastObject;
-//		NSIndexPath *fromIndexPath = [self.collectionView indexPathForCell: cell];
-//		NSLog(@"lastcell %@",NSStringFromCGPoint([self.collectionViewLayout layoutAttributesForItemAtIndexPath:fromIndexPath].frame.origin));
-//	}
 	if([self.delegate respondsToSelector: @selector(datePickerViewDidEndDragging:willDecelerate:)]) {
 		[self.delegate datePickerViewDidEndDragging: self willDecelerate: decelerate];
 	}
@@ -567,6 +558,12 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 {
 	if([self.delegate respondsToSelector: @selector(datePickerViewDidEndDecelerating:)]) {
 		[self.delegate datePickerViewDidEndDecelerating: self];
+	}
+}
+
+- (void) scrollViewDidEndScrollingAnimation:(UIScrollView *)scrollView {
+	if(self.selectedDate && [self.delegate respondsToSelector: @selector(datePickerView:didSelectDate:)]) {
+		[self.delegate datePickerView: self didSelectDate: self.selectedDate];
 	}
 }
 

@@ -80,17 +80,32 @@
 		
 		NSString *dayString = [NSString stringWithFormat:@"%i", self.date.day];
 		UIFont *font = [UIFont fontWithName: @"HelveticaNeue-Thin" size: 40];
+		if(!font) {
+			font = [UIFont systemFontOfSize: 40];
+		}
 		NSDictionary *fontAttributes = @{
 																		 NSFontAttributeName:font,
 																		 NSForegroundColorAttributeName:[UIColor colorWithRed:80/255.0f green: 101/255.0f blue:134/255.0f alpha:1]
 																		 };
-		CGSize size = [dayString sizeWithAttributes: fontAttributes];
-		CGRect textBounds = (CGRect){
-			(CGRectGetWidth(self.bounds)-size.width)/2,
-			(CGRectGetHeight(self.bounds)-size.height)/2,
-			size
-		};
-		[dayString drawInRect: textBounds withAttributes: fontAttributes];
+		if([dayString respondsToSelector: @selector(sizeWithAttributes:)]) {
+			CGSize size = [dayString sizeWithAttributes: fontAttributes];
+			CGRect textBounds = (CGRect){
+				(CGRectGetWidth(self.bounds)-size.width)/2,
+				(CGRectGetHeight(self.bounds)-size.height)/2,
+				size
+			};
+			[dayString drawInRect: textBounds withAttributes: fontAttributes];
+		} else {
+			CGSize size = [dayString sizeWithFont: font];
+			CGRect textBounds = (CGRect){
+				(CGRectGetWidth(self.bounds)-size.width)/2,
+				(CGRectGetHeight(self.bounds)-size.height)/2,
+				size
+			};
+			
+			CGContextSetFillColorWithColor(context, [UIColor colorWithRed:80/255.0f green: 101/255.0f blue:134/255.0f alpha:1].CGColor);
+			[dayString drawInRect:textBounds withFont:font lineBreakMode:NSLineBreakByCharWrapping alignment:NSTextAlignmentCenter];
+		}
 		
 		UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
 		UIGraphicsEndImageContext();

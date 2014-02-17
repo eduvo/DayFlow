@@ -541,6 +541,9 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 	if(subSection > (sectionRows-2)) {
 		subSection = 0;
 		targetSection += 1;
+		if(targetSection >= self.monthRange*2) {
+			return;
+		}
 		sectionRows = floorf([cv numberOfItemsInSection: targetSection]/7.0f);
 		expectedSectionYOffset = expectedSectionYOffset + (cvLayout.itemSize.height+cvLayout.minimumLineSpacing)*sectionRows+cvLayout.headerReferenceSize.height+cvLayout.sectionInset.top;
 	}

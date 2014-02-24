@@ -338,7 +338,7 @@ static NSString * const DFDatePickerViewMonthHeaderIdentifier = @"monthHeader";
 }
 
 - (void) highlightSelectedDateOnCell:(DFDatePickerDayCell *)cell forDate:(NSDate *)cellDate onIndexPath:(NSIndexPath *)indexPath {
-	if(self.selectedDate && cell.isEnabled) {
+	if(self.selectedDate && cell.enabled) {
 		DFDatePickerDate date1 = [self pickerDateFromDate: self.selectedDate];
 		DFDatePickerDate date2 = [self pickerDateFromDate: cellDate];
 		cell.selected = NO;

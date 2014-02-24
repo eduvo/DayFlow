@@ -120,6 +120,7 @@
 		_imageView = [[UIImageView alloc] initWithFrame:self.contentView.bounds];
 		_imageView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
 		[self.contentView addSubview:_imageView];
+		[self.contentView sendSubviewToBack:_imageView];
 	}
 	return _imageView;
 }
